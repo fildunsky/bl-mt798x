@@ -22,6 +22,57 @@
 		system_led = "red:power";
 	};
 
+	mtd-layout {
+		/* stock 128MB (ubi = 64 MiB) */
+		layout@0 {
+			label = "default";
+			cmdline = "console=ttyS0,115200n8 loglevel=8 swiotlb=512 mtd=ubi uart_en=1";
+			mtdids = "nmbm0=nmbm0";
+			mtdparts = "nmbm0:1024k(BL2),512k(u-boot-env),2048k(Factory),256k(bdinfo),2048k(FIP),65536k(ubi)";
+			boot_part = "ubi";
+			factory_part = "ubi";
+			sysupgrade_kernel_ubipart = "ubi";
+			sysupgrade_rootfs_ubipart = "ubi";
+		};
+
+		/* OpenWrt U-Boot layout (ubi ≈ 122.25 MiB, 0x07A40000 = 125184k) */
+		layout@1 {
+			label = "openwrt-ubootmod";
+			cmdline  = "console=ttyS0,115200n8 root=/dev/fit0 rootwait";
+			mtdids = "nmbm0=nmbm0";
+			mtdparts = "nmbm0:1024k(BL2),512k(u-boot-env),2048k(Factory),256k(bdinfo),2048k(FIP),125184k(ubi)";
+			boot_part = "ubi";
+			factory_part = "ubi";
+			sysupgrade_kernel_ubipart = "ubi";
+			sysupgrade_rootfs_ubipart  = "ubi";
+			boot_volume = "fit";
+		};
+
+		/* ImmortalWrt 112M UBI */
+		layout@2 {
+			label = "immortalwrt-112m";
+			cmdline = "console=ttyS0,115200n8 loglevel=8 swiotlb=512 mtd=ubi uart_en=1";
+			mtdids = "nmbm0=nmbm0";
+			mtdparts = "nmbm0:1024k(BL2),512k(u-boot-env),2048k(Factory),256k(bdinfo),2048k(FIP),114688k(ubi)";
+			boot_part = "ubi";
+			factory_part = "ubi";
+			sysupgrade_kernel_ubipart = "ubi";
+			sysupgrade_rootfs_ubipart = "ubi";
+		};
+
+		/* stock 256MB (ubi ≈ 230 MiB, 0x0E600000 = 235520k) */
+		layout@3 {
+			label = "Factory-256";
+			cmdline = "console=ttyS0,115200n8 loglevel=8 swiotlb=512 mtd=ubi uart_en=1";
+			mtdids = "nmbm0=nmbm0";
+			mtdparts = "nmbm0:1024k(BL2),512k(u-boot-env),2048k(Factory),256k(bdinfo),2048k(FIP),235520k(ubi)";
+			boot_part = "ubi";
+			factory_part = "ubi";
+			sysupgrade_kernel_ubipart = "ubi";
+			sysupgrade_rootfs_ubipart = "ubi";
+		};
+	};
+
 	memory@40000000 {
 		device_type = "memory";
 		reg = <0x40000000 0x20000000>;
