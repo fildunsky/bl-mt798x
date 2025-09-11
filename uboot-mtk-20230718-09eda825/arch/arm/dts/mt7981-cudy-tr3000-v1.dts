@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-
 /dts-v1/;
+
 #include "mt7981.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/linux-event-codes.h>
@@ -8,6 +8,7 @@
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
 	model = "cudy_tr3000-v1";
 	compatible = "mediatek,mt7981", "mediatek,mt7981-rfb";
 
@@ -17,30 +18,32 @@
 	};
 
 	config {
-		bootcmd = "mtkboardboot";
+		bootcmd = "run boot_ubi || bootmenu";
+		loadaddr = "0x46000000";
+		boot_ubi = "setenv bootargs ${cmdline} ${mtdids} ${mtdparts}; ubi part ${boot_part}; if ubi check ${boot_volume}; then ubi read ${loadaddr} ${boot_volume}; bootm ${loadaddr}; else echo \"no ${boot_volume} volume\"; false; fi";
+		boot_volume = "kernel";
+		pre_upgrade_ubi = "ubi detach; mtd erase ${factory_part}; ubi part ${factory_part}; ubi remove -a";
 		blink_led = "white:status";
 		system_led = "red:power";
 	};
 
 	mtd-layout {
-		/* stock 128MB (ubi = 64 MiB) */
 		layout@0 {
-			label = "default";
-			cmdline = "console=ttyS0,115200n8 loglevel=8 swiotlb=512 mtd=ubi uart_en=1";
-			mtdids = "nmbm0=nmbm0";
+			label = "OpenWrt-64";
+			cmdline = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8 loglevel=8 swiotlb=512 mtd=ubi";
+			mtdids  = "nmbm0=nmbm0";
 			mtdparts = "nmbm0:1024k(BL2),512k(u-boot-env),2048k(Factory),256k(bdinfo),2048k(FIP),65536k(ubi)";
 			boot_part = "ubi";
 			factory_part = "ubi";
 			sysupgrade_kernel_ubipart = "ubi";
-			sysupgrade_rootfs_ubipart = "ubi";
+			sysupgrade_rootfs_ubipart  = "ubi";
 		};
 
-		/* OpenWrt U-Boot layout (ubi ≈ 122.25 MiB, 0x07A40000 = 125184k) */
 		layout@1 {
-			label = "openwrt-ubootmod";
-			cmdline  = "console=ttyS0,115200n8 root=/dev/fit0 rootwait";
-			mtdids = "nmbm0=nmbm0";
-			mtdparts = "nmbm0:1024k(BL2),512k(u-boot-env),2048k(Factory),256k(bdinfo),2048k(FIP),125184k(ubi)";
+			label = "Openwrt-ubootmod";
+			cmdline = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8 root=/dev/fit0 rootwait ubi.block=0,fit";
+			mtdids  = "nmbm0=nmbm0";
+			mtdparts = "nmbm0:1024k(BL2),512k(u-boot-env),2048k(Factory),256k(bdinfo),2048k(FIP),114688k(ubi)";
 			boot_part = "ubi";
 			factory_part = "ubi";
 			sysupgrade_kernel_ubipart = "ubi";
@@ -48,28 +51,26 @@
 			boot_volume = "fit";
 		};
 
-		/* ImmortalWrt 112M UBI */
 		layout@2 {
 			label = "immortalwrt-112m";
-			cmdline = "console=ttyS0,115200n8 loglevel=8 swiotlb=512 mtd=ubi uart_en=1";
-			mtdids = "nmbm0=nmbm0";
+			cmdline = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8 loglevel=8 swiotlb=512 mtd=ubi";
+			mtdids  = "nmbm0=nmbm0";
 			mtdparts = "nmbm0:1024k(BL2),512k(u-boot-env),2048k(Factory),256k(bdinfo),2048k(FIP),114688k(ubi)";
 			boot_part = "ubi";
 			factory_part = "ubi";
 			sysupgrade_kernel_ubipart = "ubi";
-			sysupgrade_rootfs_ubipart = "ubi";
+			sysupgrade_rootfs_ubipart  = "ubi";
 		};
 
-		/* stock 256MB (ubi ≈ 230 MiB, 0x0E600000 = 235520k) */
 		layout@3 {
 			label = "Factory-256";
-			cmdline = "console=ttyS0,115200n8 loglevel=8 swiotlb=512 mtd=ubi uart_en=1";
-			mtdids = "nmbm0=nmbm0";
+			cmdline = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8 loglevel=8 swiotlb=512 mtd=ubi";
+			mtdids  = "nmbm0=nmbm0";
 			mtdparts = "nmbm0:1024k(BL2),512k(u-boot-env),2048k(Factory),256k(bdinfo),2048k(FIP),235520k(ubi)";
 			boot_part = "ubi";
 			factory_part = "ubi";
 			sysupgrade_kernel_ubipart = "ubi";
-			sysupgrade_rootfs_ubipart = "ubi";
+			sysupgrade_rootfs_ubipart  = "ubi";
 		};
 	};
 
@@ -157,6 +158,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi_flash_pins>;
 	status = "okay";
+
 	must_tx;
 	enhance_timing;
 	dma_ext;
@@ -172,10 +174,6 @@
 	};
 };
 
-&uart0 {
-	status = "okay";
-};
+&uart0 { status = "okay"; };
+&watchdog { status = "disabled"; };
 
-&watchdog {
-	status = "disabled";
-};
