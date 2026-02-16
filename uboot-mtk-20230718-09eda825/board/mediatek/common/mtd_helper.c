@@ -691,7 +691,13 @@ static int write_ubi_fit_image(const void *data, size_t size,
 	/* Remove this volume first in case of no enough PEBs */
 	remove_ubi_volume(PART_ROOTFS_DATA_NAME);
 
-	ret = update_ubi_volume(PART_FIT_NAME, -1, data, size);
+	/*
+	 * Use a static FIT volume sized to eraseblock alignment.
+	 * Some UBI implementations are unstable when creating tiny dynamic
+	 * FIT volumes during a freshly rebuilt UBI on layout switch.
+	 */
+	ret = update_ubi_volume_custom(PART_FIT_NAME, -1, data, size,
+				       ALIGN(size, mtd->erasesize), false);
 	if (ret)
 		goto out;
 
