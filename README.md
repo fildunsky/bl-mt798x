@@ -17,6 +17,8 @@ Usage: SOC=[mt7981|mt7986] BOARD=<board name> MULTI_LAYOUT=[0|1] ./build.sh
 eg: SOC=mt7981 BOARD=360t7 ./build.sh
 eg: SOC=mt7981 BOARD=wr30u MULTI_LAYOUT=1 ./build.sh
 eg: SOC=mt7981 BOARD=cmcc_rax3000m-emmc ./build.sh
+eg: SOC=mt7981 BOARD=wl-wnt100x3 ./build.sh
+eg: SOC=mt7981 BOARD=wl-wnt100x3 MULTI_LAYOUT=1 ./build.sh
 eg: SOC=mt7986 BOARD=redmi_ax6000 MULTI_LAYOUT=1 ./build.sh
 eg: SOC=mt7986 BOARD=jdcloud_re-cp-03 ./build.sh
 ```
