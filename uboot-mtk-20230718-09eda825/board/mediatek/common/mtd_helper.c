@@ -685,14 +685,28 @@ static int create_rootfs_data_volume(void)
 static int write_ubi_fit_image(const void *data, size_t size,
 			       struct mtd_info *mtd)
 {
+	bool reformat_ubi;
 	int ret;
 
 	ret = mount_ubi(mtd, true);
 	if (ret)
 		return ret;
 
-	if (!ubi_find_volume(PART_FIT_NAME) && !ubi_find_volume(PART_FIP_NAME)) {
-		/* ubi is dirty, erase ubi and recreate volumes */
+	/*
+	 * Keep web-failsafe FIT upgrades deterministic: if any known user volume
+	 * already exists, rebuild UBI from a clean state before creating new
+	 * volumes. This mirrors OpenWrt recovery/install behavior and avoids
+	 * reserve drift from stale metadata.
+	 */
+	reformat_ubi = !!ubi_find_volume(PART_FIT_NAME) ||
+			      !!ubi_find_volume(PART_FIP_NAME) ||
+			      !!ubi_find_volume(PART_KERNEL_NAME) ||
+			      !!ubi_find_volume(PART_ROOTFS_NAME) ||
+			      !!ubi_find_volume(PART_ROOTFS_DATA_NAME) ||
+			      !!ubi_find_volume("recovery");
+
+	if (reformat_ubi) {
+		/* UBI contains pre-existing user volumes: wipe and recreate. */
 		detach_ubi();
 		ret = mtd_erase_skip_bad(mtd, 0, mtd->size, mtd->size, NULL, NULL, false);
 		if (ret)
