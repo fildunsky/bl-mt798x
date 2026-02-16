@@ -35,7 +35,6 @@
 #define PART_KERNEL_NAME	"kernel"
 #define PART_ROOTFS_NAME	"rootfs"
 #define PART_ROOTFS_DATA_NAME	"rootfs_data"
-#define ROOTFS_DATA_FREE_PEBS	2
 
 #ifdef CONFIG_CMD_UBI
 struct ubi_image_read_priv {
@@ -669,19 +668,33 @@ static int read_ubi_volume(const char *volume, void *buff, size_t size)
 static int create_rootfs_data_volume(void)
 {
 	struct ubi_device *ubi = ubi_devices[0];
+	const char *free_pebs_s;
+	int free_pebs = 0;
 	int64_t rootfs_data_size;
 
 	if (!ubi)
 		return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
 
+	free_pebs_s = env_get("rootfs_data_free_pebs");
+	if (free_pebs_s)
+		free_pebs = simple_strtol(free_pebs_s, NULL, 10);
+
+	if (free_pebs < 0)
+		free_pebs = 0;
+
 	/*
-	 * Keep 2 free PEBs so Linux UBI attach can still raise bad-PEB reserve
-	 * level without ending up with "cannot reserve enough PEBs" warning.
+	 * Universal policy: by default keep no artificial headroom and use
+	 * autoresize behavior. A board/user may optionally tune reserve via
+	 * env var "rootfs_data_free_pebs" when needed for a specific NAND/NMBM
+	 * combination.
 	 */
-	if (ubi->avail_pebs <= ROOTFS_DATA_FREE_PEBS)
+	if (free_pebs == 0)
 		return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
 
-	rootfs_data_size = (int64_t)(ubi->avail_pebs - ROOTFS_DATA_FREE_PEBS) *
+	if (ubi->avail_pebs <= free_pebs)
+		return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+
+	rootfs_data_size = (int64_t)(ubi->avail_pebs - free_pebs) *
 			   ubi->leb_size;
 
 	return create_ubi_volume(PART_ROOTFS_DATA_NAME, rootfs_data_size,
