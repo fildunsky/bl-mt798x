@@ -25,9 +25,9 @@
 	mtd-layout {
 		layout@0 {
 			label = "default";
-			cmdline = "root=/dev/fit0 rootwait";
+			cmdline = "root=/dev/fit0 rootwait mtdparts=nmbm0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),-(ubi)";
 			mtdids = "nmbm0=nmbm0";
-			mtdparts = "nmbm0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),117248k(ubi)";
+			mtdparts = "nmbm0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),-(ubi)";
 		};
 
 		layout@1 {
