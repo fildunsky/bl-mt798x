@@ -25,7 +25,6 @@
 	mtd-layout {
 		layout@0 {
 			label = "default";
-			cmdline = "root=/dev/ubiblock0_1 rootwait";
 			mtdids = "spi-nand0=spi-nand0";
 			mtdparts = "spi-nand0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),92160k(ubi),512k(hw)";
 		};
