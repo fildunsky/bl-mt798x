@@ -291,7 +291,7 @@ static void result_handler(enum httpd_uri_handler_status status,
 		free(response->session_data);
 
 		if (upgrade_success)
-			mtk_tcp_close_all_conn();
+			net_set_state(NETLOOP_SUCCESS);
 	}
 }
 
