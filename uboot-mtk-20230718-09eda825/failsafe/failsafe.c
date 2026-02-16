@@ -55,6 +55,9 @@ static int output_plain_file(struct httpd_response *response,
 	const struct fs_desc *file;
 	int ret = 0;
 
+	if (!response || !filename)
+		return 1;
+
 	file = fs_find_file(filename);
 
 	response->status = HTTP_RESP_STD;
@@ -79,7 +82,7 @@ static void version_handler(enum httpd_uri_handler_status status,
 	struct httpd_request *request,
 	struct httpd_response *response)
 {
-	if (status != HTTP_CB_NEW)
+	if (status != HTTP_CB_NEW || !response)
 		return;
 
 	response->status = HTTP_RESP_STD;
@@ -96,7 +99,7 @@ static void index_handler(enum httpd_uri_handler_status status,
 			  struct httpd_request *request,
 			  struct httpd_response *response)
 {
-	if (status == HTTP_CB_NEW)
+	if (status == HTTP_CB_NEW && response)
 		output_plain_file(response, "index.html");
 }
 
@@ -116,7 +119,7 @@ static void upload_handler(enum httpd_uri_handler_status status,
 
 	static char hexchars[] = "0123456789abcdef";
 
-	if (status != HTTP_CB_NEW)
+	if (status != HTTP_CB_NEW || !response)
 		return;
 
 	response->status = HTTP_RESP_STD;
@@ -313,7 +316,7 @@ static void style_handler(enum httpd_uri_handler_status status,
 			  struct httpd_request *request,
 			  struct httpd_response *response)
 {
-	if (status == HTTP_CB_NEW) {
+	if (status == HTTP_CB_NEW && response) {
 		output_plain_file(response, "style.css");
 		response->info.content_type = "text/css";
 	}
@@ -323,17 +326,34 @@ static void js_handler(enum httpd_uri_handler_status status,
 	struct httpd_request *request,
 	struct httpd_response *response)
 {
-	if (status == HTTP_CB_NEW) {
+	if (status == HTTP_CB_NEW && response) {
 		output_plain_file(response, "main.js");
 		response->info.content_type = "text/javascript";
 	}
+}
+
+static void ubus_handler(enum httpd_uri_handler_status status,
+			 struct httpd_request *request,
+			 struct httpd_response *response)
+{
+	static const char ubus_resp[] = "{\"error\":\"unsupported\"}";
+
+	if (status != HTTP_CB_NEW || !response)
+		return;
+
+	response->status = HTTP_RESP_STD;
+	response->data = ubus_resp;
+	response->size = strlen(response->data);
+	response->info.code = 404;
+	response->info.connection_close = 1;
+	response->info.content_type = "application/json";
 }
 
 static void not_found_handler(enum httpd_uri_handler_status status,
 			      struct httpd_request *request,
 			      struct httpd_response *response)
 {
-	if (status == HTTP_CB_NEW) {
+	if (status == HTTP_CB_NEW && response) {
 		output_plain_file(response, "404.html");
 		response->info.code = 404;
 	}
@@ -466,6 +486,8 @@ int start_web_failsafe(void)
 	httpd_register_uri_handler(inst, "/result", &result_handler, NULL);
 	httpd_register_uri_handler(inst, "/style.css", &style_handler, NULL);
 	httpd_register_uri_handler(inst, "/uboot.html", &html_handler, NULL);
+	httpd_register_uri_handler(inst, "/ubus", &ubus_handler, NULL);
+	httpd_register_uri_handler(inst, "/ubus/", &ubus_handler, NULL);
 	httpd_register_uri_handler(inst, "/upload", &upload_handler, NULL);
 	httpd_register_uri_handler(inst, "/version", &version_handler, NULL);
 	httpd_register_uri_handler(inst, "", &not_found_handler, NULL);

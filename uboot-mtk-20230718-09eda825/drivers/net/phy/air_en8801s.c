@@ -615,29 +615,10 @@ U_BOOT_PHY_DRIVER(en8801s) = {
     .shutdown = &genphy_shutdown,
 };
 
-U_BOOT_PHY_DRIVER(en8801sc) = {
-    .name = "Airoha EN8801SC",
-    .uid = EN8801SC_PHY_ID,
-    .mask = 0x0ffffff0,
-    .features = PHY_GBIT_FEATURES,
-    .config = &en8801s_config,
-    .startup = &en8801s_startup,
-    .shutdown = &genphy_shutdown,
-};
 #else
 static struct phy_driver AIR_EN8801S_driver = {
     .name = "Airoha EN8801S",
     .uid = EN8801S_PHY_ID,
-    .mask = 0x0ffffff0,
-    .features = PHY_GBIT_FEATURES,
-    .config = &en8801s_config,
-    .startup = &en8801s_startup,
-    .shutdown = &genphy_shutdown,
-};
-
-static struct phy_driver AIR_EN8801SC_driver = {
-    .name = "Airoha EN8801SC",
-    .uid = EN8801SC_PHY_ID,
     .mask = 0x0ffffff0,
     .features = PHY_GBIT_FEATURES,
     .config = &en8801s_config,
