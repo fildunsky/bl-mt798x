@@ -35,6 +35,7 @@
 #define PART_KERNEL_NAME	"kernel"
 #define PART_ROOTFS_NAME	"rootfs"
 #define PART_ROOTFS_DATA_NAME	"rootfs_data"
+#define ROOTFS_DATA_FREE_PEBS	2
 
 #ifdef CONFIG_CMD_UBI
 struct ubi_image_read_priv {
@@ -665,6 +666,28 @@ static int read_ubi_volume(const char *volume, void *buff, size_t size)
 	return ubi_volume_read((char *)volume, buff, size);
 }
 
+static int create_rootfs_data_volume(void)
+{
+	struct ubi_device *ubi = ubi_devices[0];
+	int64_t rootfs_data_size;
+
+	if (!ubi)
+		return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+
+	/*
+	 * Keep 2 free PEBs so Linux UBI attach can still raise bad-PEB reserve
+	 * level without ending up with "cannot reserve enough PEBs" warning.
+	 */
+	if (ubi->avail_pebs <= ROOTFS_DATA_FREE_PEBS)
+		return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+
+	rootfs_data_size = (int64_t)(ubi->avail_pebs - ROOTFS_DATA_FREE_PEBS) *
+			   ubi->leb_size;
+
+	return create_ubi_volume(PART_ROOTFS_DATA_NAME, rootfs_data_size,
+				 -1, false);
+}
+
 static int write_ubi_fit_image(const void *data, size_t size,
 			       struct mtd_info *mtd)
 {
@@ -710,7 +733,7 @@ static int write_ubi_fit_image(const void *data, size_t size,
 	if (ret)
 		goto out;
 
-	ret = create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+	ret = create_rootfs_data_volume();
 
 out:
 	return ret;
@@ -748,7 +771,7 @@ static int write_ubi2_tar_image_separate(const void *data, size_t size,
 	if (ret)
 		goto out;
 
-	ret = create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+	ret = create_rootfs_data_volume();
 
 out:
 	return ret;
