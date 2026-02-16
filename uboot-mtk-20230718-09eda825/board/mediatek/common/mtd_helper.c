@@ -886,7 +886,7 @@ static int write_ubi2_tar_image(const void *data, size_t size,
 
 	return ret;
 #else
-	return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+	return create_rootfs_data_volume();
 #endif /* CONFIG_MTK_DUAL_BOOT */
 }
 
