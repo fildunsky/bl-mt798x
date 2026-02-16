@@ -27,13 +27,13 @@
 			label = "default";
 			cmdline = "root=/dev/fit0 rootwait";
 			mtdids = "spi-nand0=spi-nand0";
-			mtdparts = "spi-nand0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),-(ubi)";
+			mtdparts = "spi-nand0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),92160k(ubi),512k(hw)";
 		};
 
 		layout@1 {
-			label = "factory";
+			label = "OpenWrt (U-Boot layout)";
 			mtdids = "spi-nand0=spi-nand0";
-			mtdparts = "spi-nand0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),92160k(ubi),512k(hw)";
+			mtdparts = "spi-nand0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),-(ubi)";
 		};
 	};
 

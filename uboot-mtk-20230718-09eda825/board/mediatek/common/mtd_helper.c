@@ -665,6 +665,34 @@ static int read_ubi_volume(const char *volume, void *buff, size_t size)
 	return ubi_volume_read((char *)volume, buff, size);
 }
 
+static int create_rootfs_data_volume(void)
+{
+	struct ubi_device *ubi = ubi_devices[0];
+	int reserve_pebs;
+	int64_t rootfs_data_size;
+
+	if (!ubi)
+		return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+
+	/*
+	 * Keep exactly the missing bad-PEB reserve headroom (if any) so Linux UBI
+	 * attach does not need to steal PEBs from user volumes and emit warnings.
+	 * This is geometry-driven and does not use board-specific constants.
+	 */
+	reserve_pebs = ubi->beb_rsvd_level - ubi->beb_rsvd_pebs;
+	if (reserve_pebs <= 0)
+		return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+
+	if (ubi->avail_pebs <= reserve_pebs)
+		return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+
+	rootfs_data_size = (int64_t)(ubi->avail_pebs - reserve_pebs) *
+			   ubi->leb_size;
+
+	return create_ubi_volume(PART_ROOTFS_DATA_NAME, rootfs_data_size,
+				 -1, false);
+}
+
 static int write_ubi_fit_image(const void *data, size_t size,
 			       struct mtd_info *mtd)
 {
@@ -707,7 +735,7 @@ static int write_ubi_fit_image(const void *data, size_t size,
 	if (ret)
 		goto out;
 
-	ret = create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+	ret = create_rootfs_data_volume();
 
 out:
 	return ret;
@@ -745,7 +773,7 @@ static int write_ubi2_tar_image_separate(const void *data, size_t size,
 	if (ret)
 		goto out;
 
-	ret = create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+	ret = create_rootfs_data_volume();
 
 out:
 	return ret;
@@ -781,7 +809,7 @@ static int write_ubi1_tar_image(const void *data, size_t size,
 	if (ret)
 		return ret;
 
-	return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+	return create_rootfs_data_volume();
 }
 
 static int write_ubi2_tar_image(const void *data, size_t size,
