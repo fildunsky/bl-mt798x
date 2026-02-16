@@ -35,7 +35,7 @@
 #define PART_KERNEL_NAME	"kernel"
 #define PART_ROOTFS_NAME	"rootfs"
 #define PART_ROOTFS_DATA_NAME	"rootfs_data"
-#define ROOTFS_DATA_FREE_PEBS	8
+#define ROOTFS_DATA_FREE_PEBS	2
 
 #ifdef CONFIG_CMD_UBI
 struct ubi_image_read_priv {
