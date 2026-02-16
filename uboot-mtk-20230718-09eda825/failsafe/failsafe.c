@@ -16,6 +16,7 @@
 #include <net/mtk_httpd.h>
 #include <u-boot/md5.h>
 #include <linux/stringify.h>
+#include <linux/string.h>
 #include <dm/ofnode.h>
 #include <vsprintf.h>
 #include <version_string.h>
@@ -31,7 +32,8 @@ static int upgrade_success;
 static failsafe_fw_t fw_type;
 
 #ifdef CONFIG_MEDIATEK_MULTI_MTD_LAYOUT
-static const char *mtd_layout_label;
+#define MTD_LAYOUT_LABEL_MAXLEN	32
+static char mtd_layout_label[MTD_LAYOUT_LABEL_MAXLEN];
 const char *get_mtd_layout_label(void);
 #define MTD_LAYOUTS_MAXLEN	128
 #endif
@@ -183,9 +185,10 @@ done:
 	}
 
 #ifdef CONFIG_MEDIATEK_MULTI_MTD_LAYOUT
-	if (mtd) {
-		mtd_layout_label = mtd->data;
-		sprintf(resp, "%ld %s %s", fw->size, md5_str, mtd->data);
+	mtd_layout_label[0] = '\0';
+	if (mtd && mtd->data) {
+		strlcpy(mtd_layout_label, mtd->data, sizeof(mtd_layout_label));
+		sprintf(resp, "%ld %s %s", fw->size, md5_str, mtd_layout_label);
 	} else {
 		sprintf(resp, "%ld %s", fw->size, md5_str);
 	}
@@ -251,7 +254,7 @@ static void result_handler(enum httpd_uri_handler_status status,
 
 		if (upload_data_id == upload_id) {
 #ifdef CONFIG_MEDIATEK_MULTI_MTD_LAYOUT
-			if (mtd_layout_label &&
+			if (mtd_layout_label[0] &&
 					strcmp(get_mtd_layout_label(), mtd_layout_label) != 0) {
 				printf("httpd: saving mtd_layout_label: %s\n", mtd_layout_label);
 				env_set("mtd_layout_label", mtd_layout_label);

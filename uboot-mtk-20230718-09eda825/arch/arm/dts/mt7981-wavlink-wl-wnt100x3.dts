@@ -27,7 +27,7 @@
 			label = "default";
 			cmdline = "root=/dev/fit0 rootwait";
 			mtdids = "nmbm0=nmbm0";
-			mtdparts = "nmbm0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),125440k(ubi)";
+			mtdparts = "nmbm0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),116224k(ubi)";
 		};
 
 		layout@1 {
