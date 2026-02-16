@@ -17,6 +17,7 @@
 #include <u-boot/md5.h>
 #include <linux/stringify.h>
 #include <linux/string.h>
+#include <linux/kernel.h>
 #include <dm/ofnode.h>
 #include <vsprintf.h>
 #include <version_string.h>
@@ -340,15 +341,30 @@ static void html_handler(enum httpd_uri_handler_status status,
 static const char *get_mtdlayout_str(void)
 {
 	static char mtd_layout_str[MTD_LAYOUTS_MAXLEN];
+	const char *label, *current;
 	ofnode node, layout;
+	size_t used;
 
-	sprintf(mtd_layout_str, "%s;", get_mtd_layout_label());
+	mtd_layout_str[0] = '\0';
+	current = get_mtd_layout_label();
+	if (!current)
+		current = "";
+
+	used = scnprintf(mtd_layout_str, sizeof(mtd_layout_str), "%s;", current);
 
 	node = ofnode_path("/mtd-layout");
 	if (ofnode_valid(node) && ofnode_get_child_count(node)) {
 		ofnode_for_each_subnode(layout, node) {
-			strcat(mtd_layout_str, ofnode_read_string(layout, "label"));
-			strcat(mtd_layout_str, ";");
+			label = ofnode_read_string(layout, "label");
+			if (!label)
+				continue;
+
+			if (used >= sizeof(mtd_layout_str) - 1)
+				break;
+
+			used += scnprintf(mtd_layout_str + used,
+					 sizeof(mtd_layout_str) - used,
+					 "%s;", label);
 		}
 	}
 
