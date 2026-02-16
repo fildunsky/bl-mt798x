@@ -216,6 +216,9 @@ static void result_handler(enum httpd_uri_handler_status status,
 {
 	struct flashing_status *st;
 	u32 size;
+#ifdef CONFIG_MEDIATEK_MULTI_MTD_LAYOUT
+	const char *active_layout;
+#endif
 
 	if (status == HTTP_CB_NEW) {
 		st = calloc(1, sizeof(*st));
@@ -247,6 +250,10 @@ static void result_handler(enum httpd_uri_handler_status status,
 
 	if (status == HTTP_CB_RESPONDING) {
 		st = response->session_data;
+		if (!st) {
+			response->status = HTTP_RESP_NONE;
+			return;
+		}
 
 		if (st->body_sent) {
 			response->status = HTTP_RESP_NONE;
@@ -255,8 +262,12 @@ static void result_handler(enum httpd_uri_handler_status status,
 
 		if (upload_data_id == upload_id) {
 #ifdef CONFIG_MEDIATEK_MULTI_MTD_LAYOUT
+			active_layout = get_mtd_layout_label();
+			if (!active_layout)
+				active_layout = "";
+
 			if (mtd_layout_label[0] &&
-					strcmp(get_mtd_layout_label(), mtd_layout_label) != 0) {
+					strcmp(active_layout, mtd_layout_label) != 0) {
 				printf("httpd: saving mtd_layout_label: %s\n", mtd_layout_label);
 				env_set("mtd_layout_label", mtd_layout_label);
 				env_save();
@@ -286,6 +297,8 @@ static void result_handler(enum httpd_uri_handler_status status,
 
 	if (status == HTTP_CB_CLOSED) {
 		st = response->session_data;
+		if (!st)
+			return;
 
 		upgrade_success = !st->ret;
 
@@ -330,10 +343,23 @@ static void html_handler(enum httpd_uri_handler_status status,
 	struct httpd_request *request,
 	struct httpd_response *response)
 {
+	const char *uri;
+
 	if (status != HTTP_CB_NEW)
 		return;
 
-	if (output_plain_file(response, request->urih->uri + 1))
+	if (!request || !request->urih || !request->urih->uri) {
+		not_found_handler(status, request, response);
+		return;
+	}
+
+	uri = request->urih->uri;
+	if (uri[0] != '/' || !uri[1]) {
+		not_found_handler(status, request, response);
+		return;
+	}
+
+	if (output_plain_file(response, uri + 1))
 		not_found_handler(status, request, response);
 }
 
