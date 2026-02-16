@@ -626,10 +626,10 @@ static struct phy_driver AIR_EN8801S_driver = {
     .shutdown = &genphy_shutdown,
 };
 
-
 int phy_air_en8801s_init(void)
 {
     phy_register(&AIR_EN8801S_driver);
+    phy_register(&AIR_EN8801SC_driver);
     return 0;
 }
 #endif
