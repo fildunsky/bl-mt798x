@@ -85,6 +85,15 @@ void gen_mtd_probe_devices(void)
 		env_set("mtdparts", mtdparts);
 #endif
 
+#ifdef CONFIG_CMD_UBI
+	/*
+	 * Ensure UBI is detached before re-probing MTD partitions.
+	 * This is required when switching multi-layout profiles at runtime
+	 * (e.g. factory -> default) in web failsafe upgrade flow.
+	 */
+	ubi_exit();
+#endif
+
 	mtd_probe_devices();
 }
 
