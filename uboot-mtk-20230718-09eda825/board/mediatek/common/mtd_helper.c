@@ -7,6 +7,7 @@
  * OpenWrt MTD-based image upgrading & booting helper
  */
 
+#include <command.h>
 #include <env.h>
 #include <errno.h>
 #include <image.h>
@@ -57,6 +58,17 @@ static const struct dual_boot_slot ubi_boot_slots[DUAL_BOOT_MAX_SLOTS] = {
 static char ubi_root_path[256];
 #endif /* CONFIG_CMD_UBI */
 
+static void detach_ubi(void)
+{
+#ifdef CONFIG_CMD_UBI
+	/*
+	 * Do not call ubi_exit() directly here. cmd/ubi.c keeps its own static
+	 * selected-device pointer, which is reset only by "ubi detach" path.
+	 */
+	run_command("ubi detach", 0);
+#endif
+}
+
 void gen_mtd_probe_devices(void)
 {
 #ifdef CONFIG_MTK_FIXED_MTD_MTDPARTS
@@ -85,14 +97,12 @@ void gen_mtd_probe_devices(void)
 		env_set("mtdparts", mtdparts);
 #endif
 
-#ifdef CONFIG_CMD_UBI
 	/*
 	 * Ensure UBI is detached before re-probing MTD partitions.
 	 * This is required when switching multi-layout profiles at runtime
 	 * (e.g. factory -> default) in web failsafe upgrade flow.
 	 */
-	ubi_exit();
-#endif
+	detach_ubi();
 
 	mtd_probe_devices();
 }
@@ -570,7 +580,7 @@ static int mount_ubi(struct mtd_info *mtd, bool create)
 			if (ret)
 				return ret;
 
-			ubi_exit();
+			detach_ubi();
 			ret = ubi_part(mtd->name, NULL);
 		}
 
@@ -666,7 +676,7 @@ static int write_ubi_fit_image(const void *data, size_t size,
 
 	if (!ubi_find_volume(PART_FIT_NAME) && !ubi_find_volume(PART_FIP_NAME)) {
 		/* ubi is dirty, erase ubi and recreate volumes */
-		ubi_exit();
+		detach_ubi();
 		ret = mtd_erase_skip_bad(mtd, 0, mtd->size, mtd->size, NULL, NULL, false);
 		if (ret)
 			return ret;
