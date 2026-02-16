@@ -670,33 +670,32 @@ static int write_ubi_fit_image(const void *data, size_t size,
 {
 	int ret;
 
+	/*
+	 * Always rebuild UBI for FIT sysupgrade in web-failsafe path.
+	 * This avoids inheriting a nearly-full rootfs_data volume from previous
+	 * firmware, which can leave too few free PEBs and trigger bad-PEB reserve
+	 * warnings after attach.
+	 */
+	detach_ubi();
+	ret = mtd_erase_skip_bad(mtd, 0, mtd->size, mtd->size, NULL, NULL, false);
+	if (ret)
+		return ret;
+
 	ret = mount_ubi(mtd, true);
 	if (ret)
 		return ret;
 
-	if (!ubi_find_volume(PART_FIT_NAME) && !ubi_find_volume(PART_FIP_NAME)) {
-		/* ubi is dirty, erase ubi and recreate volumes */
-		detach_ubi();
-		ret = mtd_erase_skip_bad(mtd, 0, mtd->size, mtd->size, NULL, NULL, false);
-		if (ret)
-			return ret;
-
-		ret = mount_ubi(mtd, true);
-		if (ret)
-			return ret;
-
 #ifdef CONFIG_ENV_IS_IN_UBI
-		ret = create_ubi_volume(CONFIG_ENV_UBI_VOLUME, CONFIG_ENV_SIZE, UBI_VOL_NUM_AUTO, false);
-		if (ret)
-			goto out;
+	ret = create_ubi_volume(CONFIG_ENV_UBI_VOLUME, CONFIG_ENV_SIZE, UBI_VOL_NUM_AUTO, false);
+	if (ret)
+		goto out;
 
 #ifdef CONFIG_SYS_REDUNDAND_ENVIRONMENT
-		ret = create_ubi_volume(CONFIG_ENV_UBI_VOLUME_REDUND, CONFIG_ENV_SIZE, UBI_VOL_NUM_AUTO, false);
-		if (ret)
-			goto out;
+	ret = create_ubi_volume(CONFIG_ENV_UBI_VOLUME_REDUND, CONFIG_ENV_SIZE, UBI_VOL_NUM_AUTO, false);
+	if (ret)
+		goto out;
 #endif /* CONFIG_SYS_REDUNDAND_ENVIRONMENT */
 #endif /* CONFIG_ENV_IS_IN_UBI */
-	}
 
 	/* Remove this volume first in case of no enough PEBs */
 	remove_ubi_volume(PART_ROOTFS_DATA_NAME);
