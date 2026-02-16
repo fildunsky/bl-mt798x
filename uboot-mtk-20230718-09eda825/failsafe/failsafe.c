@@ -364,19 +364,35 @@ static void html_handler(enum httpd_uri_handler_status status,
 }
 
 #ifdef CONFIG_MEDIATEK_MULTI_MTD_LAYOUT
+static void append_layout_token(char *buf, size_t bufsz, const char *token)
+{
+	size_t used;
+	int n;
+
+	if (!buf || !bufsz || !token)
+		return;
+
+	used = strlen(buf);
+	if (used >= bufsz - 1)
+		return;
+
+	n = snprintf(buf + used, bufsz - used, "%s;", token);
+	if (n < 0)
+		buf[used] = '\0';
+}
+
 static const char *get_mtdlayout_str(void)
 {
 	static char mtd_layout_str[MTD_LAYOUTS_MAXLEN];
 	const char *label, *current;
 	ofnode node, layout;
-	size_t used;
 
 	mtd_layout_str[0] = '\0';
 	current = get_mtd_layout_label();
 	if (!current)
 		current = "";
 
-	used = scnprintf(mtd_layout_str, sizeof(mtd_layout_str), "%s;", current);
+	append_layout_token(mtd_layout_str, sizeof(mtd_layout_str), current);
 
 	node = ofnode_path("/mtd-layout");
 	if (ofnode_valid(node) && ofnode_get_child_count(node)) {
@@ -385,12 +401,9 @@ static const char *get_mtdlayout_str(void)
 			if (!label)
 				continue;
 
-			if (used >= sizeof(mtd_layout_str) - 1)
-				break;
-
-			used += scnprintf(mtd_layout_str + used,
-					 sizeof(mtd_layout_str) - used,
-					 "%s;", label);
+			append_layout_token(mtd_layout_str,
+					    sizeof(mtd_layout_str),
+					    label);
 		}
 	}
 
@@ -403,6 +416,9 @@ static void mtd_layout_handler(enum httpd_uri_handler_status status,
 	struct httpd_response *response)
 {
 	if (status != HTTP_CB_NEW)
+		return;
+
+	if (!response)
 		return;
 
 	response->status = HTTP_RESP_STD;
