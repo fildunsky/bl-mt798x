@@ -42,6 +42,8 @@ struct ubi_image_read_priv {
 	const char *volume;
 };
 
+void ubi_update_reserved(struct ubi_device *ubi);
+
 static const struct dual_boot_slot ubi_boot_slots[DUAL_BOOT_MAX_SLOTS] = {
 	{
 		.kernel = PART_KERNEL_NAME,
@@ -668,29 +670,16 @@ static int read_ubi_volume(const char *volume, void *buff, size_t size)
 static int create_rootfs_data_volume(void)
 {
 	struct ubi_device *ubi = ubi_devices[0];
-	int reserve_pebs;
-	int64_t rootfs_data_size;
-
-	if (!ubi)
-		return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
 
 	/*
-	 * Keep exactly the missing bad-PEB reserve headroom (if any) so Linux UBI
-	 * attach does not need to steal PEBs from user volumes and emit warnings.
-	 * This is geometry-driven and does not use board-specific constants.
+	 * Universal policy: before creating an autoresize data volume, top up UBI
+	 * bad-block reserve from currently available PEBs if there is a deficit.
+	 * This prevents later Linux attach warnings without board-specific constants.
 	 */
-	reserve_pebs = ubi->beb_rsvd_level - ubi->beb_rsvd_pebs;
-	if (reserve_pebs <= 0)
-		return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
+	if (ubi)
+		ubi_update_reserved(ubi);
 
-	if (ubi->avail_pebs <= reserve_pebs)
-		return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
-
-	rootfs_data_size = (int64_t)(ubi->avail_pebs - reserve_pebs) *
-			   ubi->leb_size;
-
-	return create_ubi_volume(PART_ROOTFS_DATA_NAME, rootfs_data_size,
-				 -1, false);
+	return create_ubi_volume(PART_ROOTFS_DATA_NAME, 0, -1, true);
 }
 
 static int write_ubi_fit_image(const void *data, size_t size,

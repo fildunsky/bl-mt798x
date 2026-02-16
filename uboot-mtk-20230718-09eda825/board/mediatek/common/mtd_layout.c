@@ -24,6 +24,9 @@ static ofnode ofnode_get_mtd_layout(const char *layout_label)
 
 	ofnode_for_each_subnode(layout, node) {
 		label = ofnode_read_string(layout, "label");
+		if (!label || !layout_label)
+			continue;
+
 		if (!strcmp(layout_label, label)) {
 			return layout;
 		}
