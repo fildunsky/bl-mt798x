@@ -36,8 +36,6 @@
 #define EN8801S_PHY_ID1         0x03a2
 #define EN8801S_PHY_ID2         0x9461
 #define EN8801S_PHY_ID          (unsigned long)((EN8801S_PHY_ID1 << 16) | EN8801S_PHY_ID2)
-#define EN8801SC_PHY_ID2        0x9471
-#define EN8801SC_PHY_ID         (unsigned long)((EN8801S_PHY_ID1 << 16) | EN8801SC_PHY_ID2)
 
 /*
 SFP Sample for verification
